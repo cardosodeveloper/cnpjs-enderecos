@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consulta de endereços por CNPJ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Consulta de endereços por CNPJ</h1>
+    <p>Carregue uma planilha com CNPJs e receba o endereço cadastral atualizado de cada empresa, com base nos dados abertos da Receita Federal. Ao final, exporte a planilha original com as colunas de endereço adicionadas.</p>
+  </header>
+
+  <label class="drop" id="drop" tabindex="0" role="button" aria-label="Selecionar planilha">
+    <div class="icon" aria-hidden="true">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M12 17v-6"/><path d="M9.5 13.5 12 11l2.5 2.5"/></svg>
+    </div>
+    <div>
+      <strong>Arraste a planilha aqui ou clique para escolher</strong>
+      <span>Aceita .xlsx, .xls e .csv. A coluna de CNPJ é detectada automaticamente.</span>
+    </div>
+    <input type="file" id="file" accept=".xlsx,.xls,.csv,.ods">
+  </label>
+
+  <section class="panel hidden" id="setup">
+    <div class="fileinfo">
+      <div><span class="muted">Arquivo:</span> <b id="fName"></b></div>
+      <div><span class="muted">Linhas:</span> <b id="fRows"></b></div>
+      <div><span class="muted">CNPJs válidos únicos:</span> <b id="fValid"></b></div>
+      <div><span class="muted">Inválidos:</span> <b id="fInvalid"></b></div>
+    </div>
+    <div class="settings">
+      <label class="field">Aba da planilha
+        <select id="sheetSel"></select>
+      </label>
+      <label class="field">Coluna com o CNPJ
+        <select id="colSel"></select>
+      </label>
+      <label class="field">Fonte principal
+        <select id="provSel">
+          <option value="brasilapi">BrasilAPI</option>
+          <option value="minhareceita">Minha Receita</option>
+          <option value="cnpjws">CNPJ.ws (3 consultas/min)</option>
+        </select>
+      </label>
+      <label class="field">Consultas simultâneas
+        <input type="number" id="conc" min="1" max="5" value="2">
+      </label>
+      <label class="field">Intervalo entre consultas (ms)
+        <input type="number" id="delay" min="0" step="100" value="400">
+      </label>
+    </div>
+    <div class="actions">
+      <button class="primary" id="btnStart">Iniciar consulta</button>
+      <button id="btnPause" disabled>Pausar</button>
+      <button id="btnStop" disabled>Cancelar</button>
+    </div>
+  </section>
+
+  <section class="panel hidden" id="progress">
+    <div class="progress-head">
+      <div class="count" id="pCount">0 <small>de 0 consultados</small></div>
+      <div class="stats">
+        <span>Encontrados <b id="sOk">0</b></span>
+        <span>Não encontrados <b id="sNf">0</b></span>
+        <span>Com erro <b id="sErr">0</b></span>
+        <span>Tempo restante <b id="sEta">—</b></span>
+      </div>
+    </div>
+    <div class="bar"><div id="pBar"></div></div>
+    <div class="status-line" id="statusLine"></div>
+  </section>
+
+  <section class="panel hidden" id="results">
+    <div class="toolbar">
+      <div class="filters" role="group" aria-label="Filtrar resultados">
+        <button data-f="all" aria-pressed="true">Todos</button>
+        <button data-f="ok" aria-pressed="false">Encontrados</button>
+        <button data-f="fail" aria-pressed="false">Com problema</button>
+      </div>
+      <div class="actions" style="margin:0">
+        <button id="btnRetry" disabled>Consultar novamente os com erro</button>
+        <button class="primary" id="btnExport" disabled>Exportar planilha</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Linha</th><th>CNPJ</th><th>Situação</th><th>Empresa</th><th>Endereço</th><th>Município/UF</th><th>CEP</th><th>Lat, long</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="note">As consultas são feitas direto do seu navegador para APIs públicas que espelham a base de CNPJ da Receita Federal. Se a fonte principal falhar ou limitar as requisições, a aplicação tenta automaticamente as demais. Para planilhas grandes, mantenha 1 ou 2 consultas simultâneas para evitar bloqueio por excesso de requisições. CNPJs alfanuméricos são aceitos na validação, mas dependem de cada fonte já suportá-los. A latitude e a longitude vêm do IBGE e correspondem ao centro geográfico do município da empresa, não ao endereço exato.</p>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
